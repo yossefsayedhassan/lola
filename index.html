@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>يوسف ❤️ آلاء — قصة حبنا</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google Fonts: Cormorant Garamond (display) + Lato (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Lato:wght@300;400;700&family=Dancing+Script:wght@400;600;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       CUSTOM CURSOR
+  ═══════════════════════════════════════════ -->
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+  <div id="cursor-trail-container"></div>
+
+  <!-- ═══════════════════════════════════════════
+       PRELOADER
+  ═══════════════════════════════════════════ -->
+  <div id="preloader">
+    <div class="preloader-inner">
+      <div class="preloader-heart">
+        <svg viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+          <path class="heart-path" d="M50 85 C50 85 5 55 5 28 C5 12 17 2 30 2 C40 2 48 8 50 14 C52 8 60 2 70 2 C83 2 95 12 95 28 C95 55 50 85 50 85Z"/>
+        </svg>
+      </div>
+      <p class="preloader-text">بنجهزلك حاجة حلوة أوي…</p>
+      <div class="preloader-bar"><div class="preloader-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       FLOATING MUSIC PLAYER
+  ═══════════════════════════════════════════ -->
+  <div id="music-player" class="glass-card">
+    <button id="music-toggle" title="Play/Pause">
+      <svg id="play-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      <svg id="pause-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+    </button>
+    <div class="music-info">
+      <span class="music-note">♪</span>
+      <span class="music-label">أغنيتنا</span>
+    </div>
+    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.4" title="Volume" />
+    <!-- Using a royalty-free looping piano piece via Web Audio API synth — no external file needed -->
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       DARK / LIGHT MODE TOGGLE
+  ═══════════════════════════════════════════ -->
+  <button id="theme-toggle" title="Toggle romantic mode">
+    <span id="theme-icon">☀</span>
+  </button>
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 1 — CINEMATIC INTRO
+  ═══════════════════════════════════════════ -->
+  <section id="intro" class="fullscreen">
+    <canvas id="stars-canvas"></canvas>
+    <div class="intro-content">
+      <p class="intro-overline reveal-text">قصة لازم تتحكي</p>
+      <h1 class="intro-headline reveal-text">
+        في الدنيا كتير قصص حب…<br/>
+        <em>بس قصتنا دي اللي في قلبي ❤️</em>
+      </h1>
+      <div class="intro-divider reveal-text">
+        <span class="divider-line"></span>
+        <svg class="divider-heart" viewBox="0 0 20 18"><path d="M10 17C10 17 1 11 1 5.5C1 2.5 3.5 1 6 1C8 1 9.5 2 10 3C10.5 2 12 1 14 1C16.5 1 19 2.5 19 5.5C19 11 10 17 10 17Z"/></svg>
+        <span class="divider-line"></span>
+      </div>
+      <button id="enter-btn" class="btn-primary reveal-text">ادخل عالمنا ✨</button>
+    </div>
+    <div class="scroll-indicator">
+      <span>نزّل تحت</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- MAIN STORY (hidden until Enter pressed) -->
+  <main id="story" class="hidden">
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 2 — "THE BEGINNING"
+    ═══════════════════════════════════════════ -->
+    <section id="beginning" class="story-section parallax-section">
+      <div class="parallax-bg" data-speed="0.4" style="background-image: url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1600&q=80')"></div>
+      <div class="section-overlay"></div>
+      <div class="section-content glass-card">
+        <span class="section-chapter">الفصل الأول</span>
+        <h2 class="section-title animate-slide-up">الأول</h2>
+        <p class="section-body animate-fade">
+          في الشغل، وسط الروتين والأيام الرتيبة، لقيت آلاء —
+          بنت غيّرت كل حاجة من غير ما تعمل أي حاجة.
+          بس ضحكتها كانت بتفضل في دماغي طول اليوم،
+          وكنت حاسس إن في حاجة كده بتحصل مش فاهمها.
+        </p>
+        <div class="accent-quote animate-fade">"لقيتك في أعادي الأيام، فبقت الأيام كلها أعياد."</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 3 — LOVE COUNTER
+    ═══════════════════════════════════════════ -->
+    <section id="counter-section" class="story-section counter-section">
+      <div class="counter-bg-gradient"></div>
+      <div class="section-content centered">
+        <span class="section-chapter">وقتنا مع بعض</span>
+        <h2 class="section-title animate-slide-up">مع بعض من</h2>
+        <div class="counter-date animate-fade">١٠ فبراير ٢٠٢٦</div>
+        <div class="counter-grid animate-fade" id="love-counter">
+          <div class="counter-block">
+            <span class="counter-num" id="days">000</span>
+            <span class="counter-label">يوم</span>
+          </div>
+          <div class="counter-sep">:</div>
+          <div class="counter-block">
+            <span class="counter-num" id="hours">00</span>
+            <span class="counter-label">ساعة</span>
+          </div>
+          <div class="counter-sep">:</div>
+          <div class="counter-block">
+            <span class="counter-num" id="minutes">00</span>
+            <span class="counter-label">دقيقة</span>
+          </div>
+          <div class="counter-sep">:</div>
+          <div class="counter-block">
+            <span class="counter-num" id="seconds">00</span>
+            <span class="counter-label">ثانية</span>
+          </div>
+        </div>
+        <p class="counter-sub animate-fade">…وكل ثانية فيهم كانت تستاهل أوي.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 4 — 3D GALLERY
+    ═══════════════════════════════════════════ -->
+    <section id="gallery-section" class="story-section">
+      <div class="section-content full-width">
+        <span class="section-chapter centered">ذكريات</span>
+        <h2 class="section-title centered animate-slide-up">ألبوم صورنا</h2>
+        <p class="section-body centered animate-fade">لحظات وقّفت الزمن — كل واحدة فيها دنيا لوحدها.</p>
+
+        <div class="gallery-grid animate-fade" id="gallery-grid">
+          <!-- Cards generated by JS for true 3D tilt -->
+          <div class="gallery-card tilt-card" data-lightbox="1">
+            <div class="gallery-img" style="background-image:url('https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80')"></div>
+            <div class="gallery-overlay"><span>أول ابتسامة ✨</span></div>
+          </div>
+          <div class="gallery-card tilt-card" data-lightbox="2">
+            <div class="gallery-img" style="background-image:url('https://images.unsplash.com/photo-1502863661924-2ce4d7e4b6f8?w=600&q=80')"></div>
+            <div class="gallery-overlay"><span>وقت ذهبي 🌅</span></div>
+          </div>
+          <div class="gallery-card tilt-card" data-lightbox="3">
+            <div class="gallery-img" style="background-image:url('https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=600&q=80')"></div>
+            <div class="gallery-overlay"><span>مغامرتنا 🗺️</span></div>
+          </div>
+          <div class="gallery-card tilt-card" data-lightbox="4">
+            <div class="gallery-img" style="background-image:url('https://images.unsplash.com/photo-1523975575015-c5e9f5f4c3ed?w=600&q=80')"></div>
+            <div class="gallery-overlay"><span>نجوم الليل 🌙</span></div>
+          </div>
+          <div class="gallery-card tilt-card" data-lightbox="5">
+            <div class="gallery-img" style="background-image:url('https://images.unsplash.com/photo-1543269865-4430f94492b9?w=600&q=80')"></div>
+            <div class="gallery-overlay"><span>إيد في إيد 🤝</span></div>
+          </div>
+          <div class="gallery-card tilt-card" data-lightbox="6">
+            <div class="gallery-img" style="background-image:url('https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=600&q=80')"></div>
+            <div class="gallery-overlay"><span>بداية الأبد 💕</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="hidden">
+      <button id="lightbox-close">✕</button>
+      <div id="lightbox-img"></div>
+      <div id="lightbox-caption"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 5 — LOVE TIMELINE
+    ═══════════════════════════════════════════ -->
+    <section id="timeline-section" class="story-section">
+      <div class="timeline-bg-gradient"></div>
+      <div class="section-content">
+        <span class="section-chapter centered">رحلتنا</span>
+        <h2 class="section-title centered animate-slide-up">محطات حبنا</h2>
+
+        <div class="timeline" id="timeline">
+          <div class="timeline-item" data-side="left">
+            <div class="timeline-dot">💼</div>
+            <div class="timeline-card glass-card">
+              <span class="timeline-date">أول ٢٠٢٦</span>
+              <h3>أول ما شوفتها</h3>
+              <p>في الشغل وسط الأيام الروتينية لقيت آلاء. ضحكتها خلّت اليوم ده مختلف من غير ما أعرف ليه.</p>
+            </div>
+          </div>
+          <div class="timeline-item" data-side="right">
+            <div class="timeline-dot">💌</div>
+            <div class="timeline-card glass-card">
+              <span class="timeline-date">١٠ فبراير ٢٠٢٦</span>
+              <h3>يوسف قال اللي في قلبه</h3>
+              <p>بيوم واحد قبل عيد ميلادها قلتلها بحبها. أجمل هدية ممكن أقدمهالها وأنا خايف ومبسوط في نفس الوقت.</p>
+            </div>
+          </div>
+          <div class="timeline-item" data-side="left">
+            <div class="timeline-dot">🎂</div>
+            <div class="timeline-card glass-card">
+              <span class="timeline-date">١١ فبراير ٢٠٢٦</span>
+              <h3>عيد ميلاد آلاء 🎉</h3>
+              <p>يوم ميلادك يا آلاء — الدنيا كلها احتفلت بيكي إنهاردة زي ما قلبي بيحتفل بيكي كل يوم.</p>
+            </div>
+          </div>
+          <div class="timeline-item" data-side="right">
+            <div class="timeline-dot">🌹</div>
+            <div class="timeline-card glass-card">
+              <span class="timeline-date">١٤ فبراير ٢٠٢٦</span>
+              <h3>آلاء قالت "بحبك"</h3>
+              <p>في عيد الحب قالتلي بتحبني. واللهي اللحظة دي مش هنساها طول عمري خالص.</p>
+            </div>
+          </div>
+          <div class="timeline-item" data-side="left">
+            <div class="timeline-dot">🌙</div>
+            <div class="timeline-card glass-card">
+              <span class="timeline-date">القاهرة</span>
+              <h3>مدينتنا</h3>
+              <p>في شوارع القاهرة الصخبانة دي، لقينا عالمنا الهادي جوا بعض بعيد عن كل الدوشة.</p>
+            </div>
+          </div>
+          <div class="timeline-item" data-side="right">
+            <div class="timeline-dot">♾️</div>
+            <div class="timeline-card glass-card">
+              <span class="timeline-date">النهارده وكل يوم</span>
+              <h3>لسه بنكتب القصة</h3>
+              <p>كل يوم بيعدي معاكي ده صفحة جديدة مش عايز أوقفها أبدًا.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 6 — LOVE LETTER (TYPING EFFECT)
+    ═══════════════════════════════════════════ -->
+    <section id="letter-section" class="story-section parallax-section">
+      <div class="parallax-bg" data-speed="0.3" style="background-image:url('https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45?w=1600&q=80')"></div>
+      <div class="section-overlay dark"></div>
+      <div class="section-content centered">
+        <span class="section-chapter">من قلبي</span>
+        <h2 class="section-title animate-slide-up">جواب ليكي يا آلاء</h2>
+        <div class="letter-paper glass-card" id="letter-paper">
+          <p class="letter-salutation">حبيبة قلبي يا آلاء،</p>
+          <p class="letter-body" id="letter-typed"></p>
+          <span class="typing-cursor" id="typing-cursor">|</span>
+          <p class="letter-sign">دايمًا ليكي،<br/><em>— يوسف ❤️</em></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 7 — REASONS I LOVE YOU
+    ═══════════════════════════════════════════ -->
+    <section id="reasons-section" class="story-section">
+      <div class="section-content full-width">
+        <span class="section-chapter centered">ملهاش حساب الأسباب</span>
+        <h2 class="section-title centered animate-slide-up">ليه بحبك يا آلاء</h2>
+        <div class="reasons-grid" id="reasons-grid">
+          <div class="reason-card glass-card animate-pop">
+            <div class="reason-icon">😊</div>
+            <p>ضحكتك — دي اللي بتخلي قلبي يرقص حتى في نص الكلام.</p>
+          </div>
+          <div class="reason-card glass-card animate-pop" style="--delay:0.1s">
+            <div class="reason-icon">🌟</div>
+            <p>لما بتدخلي أي مكان بتحسيه بضوء من نوع تاني خالص.</p>
+          </div>
+          <div class="reason-card glass-card animate-pop" style="--delay:0.2s">
+            <div class="reason-icon">🫂</div>
+            <p>طيبة قلبك اللي بتخليني حاسس إنك أمان في كل وقت.</p>
+          </div>
+          <div class="reason-card glass-card animate-pop" style="--delay:0.3s">
+            <div class="reason-icon">💼</div>
+            <p>حتى في الشغل، إنتي اللي خليتي كل يوم يستاهل أصحى عشانه.</p>
+          </div>
+          <div class="reason-card glass-card animate-pop" style="--delay:0.4s">
+            <div class="reason-icon">🎂</div>
+            <p>يوم ١١ فبراير — يوم ميلادك — صحيت عارف معنى الفرحة الحقيقية.</p>
+          </div>
+          <div class="reason-card glass-card animate-pop" style="--delay:0.5s">
+            <div class="reason-icon">🌹</div>
+            <p>يوم ١٤ فبراير لما قلتيلي بتحبيني — عايز أعيش اللحظة دي مليون مرة.</p>
+          </div>
+          <div class="reason-card glass-card animate-pop" style="--delay:0.6s">
+            <div class="reason-icon">🌙</div>
+            <p>في شوارع القاهرة، معاكي بس اللي بحسها مختلفة.</p>
+          </div>
+          <div class="reason-card glass-card animate-pop" style="--delay:0.7s">
+            <div class="reason-icon">♾️</div>
+            <p>إنتي. بس إنتي. دايمًا إنتي.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 8 — SURPRISE BUTTON
+    ═══════════════════════════════════════════ -->
+    <section id="surprise-section" class="story-section">
+      <div class="surprise-bg-gradient"></div>
+      <div class="section-content centered">
+        <span class="section-chapter">سر صغير</span>
+        <h2 class="section-title animate-slide-up">عندي مفاجأة يا آلاء…</h2>
+        <p class="section-body centered animate-fade">قفلي عينيكي الأول. وبعدين اضغطي على الزرار.</p>
+        <button id="surprise-btn" class="btn-surprise animate-fade">
+          <span class="btn-heart">❤️</span> اضغطي هنا
+        </button>
+        <div id="surprise-message" class="hidden glass-card">
+          <p>أنا بحبك أوي يا حبيبة قلبي يا آلاء يا عسولة — دايمًا افتكريني، أنا معاكي دايمًا في كل حاجة.</p>
+          <span class="surprise-sign">— يوسف بيحبك ❤️</span>
+        </div>
+      </div>
+      <!-- Hearts explosion container -->
+      <div id="hearts-container"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         SECTION 9 — FINAL SCENE (EMOTIONAL ENDING)
+    ═══════════════════════════════════════════ -->
+    <section id="finale" class="story-section fullscreen">
+      <canvas id="finale-canvas"></canvas>
+      <div class="finale-content">
+        <p class="finale-overline animate-slide-up">والقصة لسه مكملتش…</p>
+        <h2 class="finale-headline">
+          <span class="finale-line">في أي حياة،</span>
+          <span class="finale-line">وفي أي وقت،</span>
+          <span class="finale-line finale-highlight">هختار إنتي يا آلاء. ❤️</span>
+        </h2>
+        <div class="finale-divider">
+          <span class="divider-line"></span>
+          <svg class="divider-heart big" viewBox="0 0 20 18"><path d="M10 17C10 17 1 11 1 5.5C1 2.5 3.5 1 6 1C8 1 9.5 2 10 3C10.5 2 12 1 14 1C16.5 1 19 2.5 19 5.5C19 11 10 17 10 17Z"/></svg>
+          <span class="divider-line"></span>
+        </div>
+        <p class="finale-sub">❤️ يوسف ❤️ آلاء ❤️</p>
+        <button class="btn-secondary" id="restart-btn">← ارجع لأول القصة</button>
+      </div>
+      <div id="floating-hearts-container"></div>
+      <div id="fireworks-container"></div>
+    </section>
+
+  </main>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
