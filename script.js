@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   // Cursor state on interactive elements
-  document.querySelectorAll('a, button, .gallery-card, .timeline-card, .nav-dot, .next-section').forEach(el => {
+  document.querySelectorAll('a, button, .polaroid, .timeline-card, .nav-dot, .next-section').forEach(el => {
     el.addEventListener('mouseenter', () => document.body.classList.add('cursor-link'));
     el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-link'));
   });
@@ -324,31 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-     10. 3D TILT EFFECT ON GALLERY CARDS
+      10. (removed — replaced by polaroid gallery)
   ══════════════════════════════════════════════ */
-  function initTilt() {
-    document.querySelectorAll('.tilt-card').forEach(card => {
-      card.addEventListener('mousemove', e => {
-        const rect   = card.getBoundingClientRect();
-        const cx     = rect.left + rect.width  / 2;
-        const cy     = rect.top  + rect.height / 2;
-        const dx     = (e.clientX - cx) / (rect.width  / 2);
-        const dy     = (e.clientY - cy) / (rect.height / 2);
-        const rotX   = -dy * 10;
-        const rotY   =  dx * 10;
-        card.style.transform = `perspective(600px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.03)`;
-      });
-
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) scale(1)';
-        card.style.transition = 'transform 0.5s ease';
-      });
-
-      card.addEventListener('mouseenter', () => {
-        card.style.transition = 'transform 0.1s ease';
-      });
-    });
-  }
 
 
   /* ══════════════════════════════════════════════
@@ -361,22 +338,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const lbPrev      = document.getElementById('lightbox-prev');
   const lbNext      = document.getElementById('lightbox-next');
 
+  // Auto-detect media type from file extension
+  function mediaType(url) {
+    const ext = url.split('.').pop().toLowerCase();
+    return ['mp4','webm','ogg','mov','avi','mkv'].includes(ext) ? 'video' : 'image';
+  }
+
   const galleryData = [
-    { url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=1200&q=90', caption: '✨ أول ابتسامة' },
-    { url: 'https://images.unsplash.com/photo-1502863661924-2ce4d7e4b6f8?w=1200&q=90', caption: '🌅 وقت ذهبي' },
-    { url: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=1200&q=90', caption: '🗺️ مغامرتنا' },
-    { url: 'https://images.unsplash.com/photo-1523975575015-c5e9f5f4c3ed?w=1200&q=90', caption: '🌙 نجوم الليل' },
-    { url: 'https://images.unsplash.com/photo-1543269865-4430f94492b9?w=1200&q=90', caption: '🤝 إيد في إيد' },
-    { url: 'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=1200&q=90', caption: '💕 بداية الأبد' },
-  ];
+    { url: 'photo_1_2026-05-25_16-53-41.jpg', caption: '✨ أول ابتسامة', entrance: 'left',   rot: -2,    size: '' },
+    { url: 'photo_2_2026-05-25_16-52-28.jpg', caption: '🌅 وقت ذهبي',    entrance: 'right',  rot: 2.5,   size: '' },
+    { url: 'photo_3_2026-05-25_16-53-41.jpg', caption: '🗺️ مغامرتنا',   entrance: 'bottom', rot: -1.5,  size: '' },
+    { url: 'photo_4_2026-05-25_16-53-41 - Copy.jpg', caption: '🌙 نجوم الليل', entrance: 'right',  rot: 3,     size: '' },
+    { url: 'photo_5_2026-05-25_16-52-28.jpg', caption: '🤝 إيد في إيد', entrance: 'scale',  rot: -3,    size: '' },
+    { url: 'photo_8_2026-05-25_16-52-28.jpg', caption: '🌸 جمال الروح',  entrance: 'left',   rot: -1.3,  size: '' },
+    { url: 'photo_6_2026-05-25_16-53-41.jpg', caption: '💕 بداية الأبد', entrance: 'left',   rot: 1.8,   size: '' },
+    { url: 'photo_7_2026-05-25_16-52-28.jpg', caption: '☕ أحلى صباح',  entrance: 'bottom', rot: -2.2,  size: '' },
+    { url: 'IMG_7492.MP4',                   caption: '🎵 أغنيتنا',    entrance: 'right',  rot: 1.2,   size: '' },
+    { url: 'photo_9_2026-05-25_16-53-41.jpg', caption: '🌆 القاهرة',    entrance: 'left',   rot: -1,    size: '' },
+    { url: 'photo_11_2026-05-25_16-53-41.jpg',caption: '♾️ للأبد',     entrance: 'scale',  rot: 2,     size: 'wide' },
+    { url: 'video_2026-05-25_20-21-38.mp4',   caption: '🎬 لحظة حلوة',  entrance: 'right',  rot: 1.5,   size: '' },
+    { url: 'video_2026-05-25_20-21-49.mp4',   caption: '🎬 ذكريات',     entrance: 'left',   rot: -1.8,  size: '' },
+    { url: 'video_2026-05-25_20-21-55.mp4',   caption: '🎬 فيديو حب',   entrance: 'bottom', rot: 0.8,   size: '' },
+  ].map(d => ({ ...d, type: mediaType(d.url) }));
 
   let currentLightboxIdx = 0;
+  let lbVideoEl = null;
 
   function openLightbox(idx) {
     currentLightboxIdx = idx;
     const d = galleryData[idx];
-    lbImg.style.backgroundImage = `url('${d.url}')`;
     lbCaption.textContent = d.caption;
+
+    // Remove any previous video element
+    if (lbVideoEl) { lbVideoEl.remove(); lbVideoEl = null; }
+    lbImg.style.backgroundImage = 'none';
+
+    if (d.type === 'video') {
+      lbImg.style.backgroundImage = 'none';
+      const video = document.createElement('video');
+      video.src = d.url;
+      video.controls = true;
+      video.autoplay = true;
+      video.loop = false;
+      video.playsInline = true;
+      video.style.cssText = 'max-width:90vw; max-height:80vh; width:auto; height:auto; border-radius:12px;';
+      lbImg.appendChild(video);
+      lbVideoEl = video;
+    } else {
+      lbImg.style.backgroundImage = `url('${d.url}')`;
+    }
+
     lightbox.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
   }
@@ -388,11 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
     openLightbox(idx);
   }
 
-  document.querySelectorAll('.gallery-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const idx = parseInt(card.dataset.lightbox) - 1;
-      openLightbox(idx);
-    });
+  // Click via event delegation (works with dynamically created cards)
+  document.getElementById('polaroid-grid').addEventListener('click', e => {
+    const card = e.target.closest('.polaroid');
+    if (card) openLightbox(parseInt(card.dataset.index));
   });
 
   lbClose.addEventListener('click', closeLightbox);
@@ -413,7 +423,187 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-      12. SECTION NAV DOTS — SCROLL TRACKING + CLICK
+      12. RENDER POLAROID GALLERY
+  ══════════════════════════════════════════════ */
+  function renderGallery() {
+    const grid = document.getElementById('polaroid-grid');
+    grid.innerHTML = '';
+
+    galleryData.forEach((d, i) => {
+      const card = document.createElement('div');
+      card.className = 'polaroid' + (d.size ? ' polaroid-' + d.size : '');
+      card.dataset.index = i;
+      card.dataset.entrance = d.entrance || 'left';
+      card.dataset.rot = d.rot || 0;
+
+      const photo = document.createElement('div');
+      photo.className = 'polaroid-photo';
+
+      if (d.type === 'video') {
+        const video = document.createElement('video');
+        video.src = d.url;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+        // Play on hover, pause on leave
+        card.addEventListener('mouseenter', () => { video.currentTime = 0; video.play(); });
+        card.addEventListener('mouseleave', () => video.pause());
+        // Overlay play indicator
+        const playBadge = document.createElement('div');
+        playBadge.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="white" opacity="0.7"><polygon points="8,5 19,12 8,19"/></svg>';
+        playBadge.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;';
+        photo.appendChild(video);
+        photo.appendChild(playBadge);
+      } else {
+        photo.style.backgroundImage = `url('${d.url}')`;
+      }
+
+      const caption = document.createElement('span');
+      caption.className = 'polaroid-caption';
+      caption.textContent = d.caption;
+
+      card.appendChild(photo);
+      card.appendChild(caption);
+      grid.appendChild(card);
+    });
+  }
+
+  /* ══════════════════════════════════════════════
+      13. POLAROID ENTRANCE ANIMATIONS
+  ══════════════════════════════════════════════ */
+  function initPolaroidEntrance() {
+    const cards = document.querySelectorAll('.polaroid');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const card = entry.target;
+          setTimeout(() => card.classList.add('entered'), 100);
+          obs.unobserve(card);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    cards.forEach((card, i) => {
+      card.style.setProperty('--i', i);
+      card.style.setProperty('--rot', card.dataset.rot || '0');
+      obs.observe(card);
+    });
+  }
+
+  /* ══════════════════════════════════════════════
+      13. POLAROID SHUFFLE + SLIDESHOW
+  ══════════════════════════════════════════════ */
+  function initGalleryControls() {
+    const grid = document.getElementById('polaroid-grid');
+    if (!grid) return;
+
+    // Shuffle
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    if (shuffleBtn) {
+      shuffleBtn.addEventListener('click', () => {
+        const cards = Array.from(grid.children);
+        for (let i = cards.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          grid.insertBefore(cards[j], cards[i]);
+          // Retrigger entrance
+          cards[j].classList.remove('entered');
+          setTimeout(() => cards[j].classList.add('entered'), 50 + j * 60);
+        }
+      });
+    }
+
+    // Slideshow
+    const slideshowBtn = document.getElementById('slideshow-btn');
+    let slideshowInterval = null;
+    let isSlideshowActive = false;
+
+    if (slideshowBtn) {
+      slideshowBtn.addEventListener('click', () => {
+        if (isSlideshowActive) {
+          clearInterval(slideshowInterval);
+          slideshowBtn.classList.remove('active');
+          isSlideshowActive = false;
+          return;
+        }
+        isSlideshowActive = true;
+        slideshowBtn.classList.add('active');
+        openLightbox(0);
+
+        slideshowInterval = setInterval(() => {
+          let next = (currentLightboxIdx + 1) % galleryData.length;
+          openLightbox(next);
+        }, 3500);
+      });
+    }
+
+    // Stop slideshow + video on lightbox close
+    const origClose = closeLightbox;
+    const _closeLightbox = function() {
+      if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        slideshowBtn.classList.remove('active');
+        isSlideshowActive = false;
+      }
+      if (lbVideoEl) { lbVideoEl.pause(); lbVideoEl.remove(); lbVideoEl = null; }
+      origClose();
+    };
+    closeLightbox = _closeLightbox;
+  }
+
+  /* ══════════════════════════════════════════════
+      14. LIGHTBOX KEN BURNS ZOOM
+  ══════════════════════════════════════════════ */
+  let kenBurnsRAF = null;
+  let kenBurnsProgress = 0;
+
+  function startKenBurns() {
+    stopKenBurns();
+    const d = galleryData[currentLightboxIdx];
+    // Skip Ken Burns for videos
+    if (d && d.type === 'video') {
+      lbImg.style.transform = 'none';
+      return;
+    }
+    kenBurnsProgress = 0;
+    lbImg.style.transform = 'scale(1)';
+    lbImg.style.transition = 'none';
+
+    function animate() {
+      kenBurnsProgress += 0.002;
+      if (kenBurnsProgress > 1) kenBurnsProgress = 1;
+      const scale = 1 + kenBurnsProgress * 0.12;
+      const panX = kenBurnsProgress * 2;
+      const panY = kenBurnsProgress * 1.5;
+      lbImg.style.transform = `scale(${scale}) translate(${panX}px, ${panY}px)`;
+      if (kenBurnsProgress < 1) {
+        kenBurnsRAF = requestAnimationFrame(animate);
+      }
+    }
+    kenBurnsRAF = requestAnimationFrame(animate);
+  }
+
+  function stopKenBurns() {
+    if (kenBurnsRAF) { cancelAnimationFrame(kenBurnsRAF); kenBurnsRAF = null; }
+  }
+
+  // Override openLightbox to add Ken Burns
+  const _origOpenLightbox = openLightbox;
+  openLightbox = function(idx) {
+    _origOpenLightbox(idx);
+    startKenBurns();
+  };
+
+  // Override navigateLightbox to reset zoom
+  const _origNavigate = navigateLightbox;
+  navigateLightbox = function(dir) {
+    _origNavigate(dir);
+    startKenBurns();
+  };
+
+  /* ══════════════════════════════════════════════
+      15. SECTION NAV DOTS — SCROLL TRACKING + CLICK
   ══════════════════════════════════════════════ */
   function initNavDots() {
     const nav     = document.getElementById('section-nav');
@@ -441,8 +631,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ══════════════════════════════════════════════
-      13. NEXT SECTION PROMPTS
+      16. NEXT SECTION PROMPTS
   ══════════════════════════════════════════════ */
+
+
   function initNextSection() {
     document.querySelectorAll('.next-section').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -474,7 +666,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-      15. TYPING EFFECT (Love Letter) + PAPER REVEAL
+      15. TYPING EFFECT (Beginning Story) + PAPER REVEAL
+  ══════════════════════════════════════════════ */
+  const beginningText = `اليوم ده كنت رايح الشغل مخنوق ومتعصب، ولسه داخل المكتب ومتخانق أصلًا… واليوم كله كان شكله بايظ. بس وسط كل الدوشة دي، كانت قاعدة آلاء. هادية بشكل غريب… وكأنها بعيدة عن كل الزحمة اللي حوالين المكان.\n\nأول ما شوفتها، هديت. مش عارف إزاي، بس فعلًا هديت.\n\nدخلت أعملها الانترفيو، ومن أول كلام بينا كان جوايا إحساس غريب بيقول: "البنت دي مينفعش تمشي."\n\nمكنتش فاهم ليه، بس قلبي كان مستريح لها بشكل يخوف. وعينيها… كان فيهم حاجة غريبة جدًا، حاجة خلتني أسرح وأنا ببصلها، وأنسى إني المفروض بس بعمل انترفيو عادي.\n\nالغريبة إني وقتها مكنتش أعرف إني بدأت أحبها فعلًا. بس كل اللي كنت حاسه… إني عايز أنزل المكتب كل شوية، لأي سبب، بس علشان أشوفها ❤️`;
+
+  let beginningTypingDone = false;
+  let beginningTypingActive = false;
+
+  function initBeginningTyping() {
+    const section  = document.getElementById('beginning');
+    const target   = document.getElementById('beginning-typed');
+    const cursor   = document.getElementById('beginning-cursor');
+    if (!section || !target || !cursor) return;
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !beginningTypingDone && !beginningTypingActive) {
+          beginningTypingActive = true;
+          obs.disconnect();
+          setTimeout(() => typeText(beginningText, target, cursor, () => { beginningTypingDone = true; }), 400);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    obs.observe(section);
+  }
+
+  /* ══════════════════════════════════════════════
+      16. TYPING EFFECT (Love Letter) + PAPER REVEAL
   ══════════════════════════════════════════════ */
   const letterText = `يا آلاء، في الشغل كنا بنتعامل زي أي ناس عادية — بس كان في حاجة في ضحكتك بتوقفني كل مرة. مش قادر أفسرها، بس كنت دايمًا بدور عليكي بعيني من غير ما أقصد.
 
@@ -503,13 +722,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (entry.isIntersecting && !typingDone && !typingActive) {
           typingActive = true;
           obs.disconnect();
-          // Trigger paper reveal first
           if (paper) {
             paper.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
             setTimeout(() => paper.classList.add('revealed'), 100);
           }
-          // Start typing after paper reveals
-          setTimeout(() => typeText(letterText, target, cursor, sign), 600);
+          setTimeout(() => typeText(letterText, target, cursor, () => { typingDone = true; cursor.style.opacity = '0'; if (sign) { sign.style.transition = 'opacity 1s ease'; sign.style.opacity = '1'; } }), 600);
         }
       });
     }, { threshold: 0.3 });
@@ -517,23 +734,17 @@ document.addEventListener('DOMContentLoaded', () => {
     obs.observe(section);
   }
 
-  function typeText(text, el, cursor, sign) {
+  function typeText(text, el, cursor, onDone) {
     let i = 0;
-    const speed = 28; // ms per character
+    const speed = 28;
 
     (function next() {
       if (i < text.length) {
         el.textContent += text[i];
         i++;
         setTimeout(next, speed + (Math.random() * 20));
-      } else {
-        typingDone = true;
-        cursor.style.opacity = '0';
-        // Show sign after typing
-        if (sign) {
-          sign.style.transition = 'opacity 1s ease';
-          sign.style.opacity = '1';
-        }
+      } else if (onDone) {
+        onDone();
       }
     })();
   }
@@ -784,15 +995,10 @@ document.addEventListener('DOMContentLoaded', () => {
       once: true,
     });
 
-    // Gallery grid stagger
+    // Gallery grid stagger — handled by polaroid entrance
     ScrollTrigger.create({
       trigger: '#gallery-section',
       start: 'top 70%',
-      onEnter: () => {
-        gsap.from('.gallery-card', {
-          scale: 0.85, opacity: 0, stagger: 0.1, duration: 0.7, ease: 'back.out(1.4)',
-        });
-      },
       once: true,
     });
 
@@ -822,12 +1028,15 @@ document.addEventListener('DOMContentLoaded', () => {
   ══════════════════════════════════════════════ */
   function initStory() {
     initScrollAnimations();
-    initTilt();
+    renderGallery();
+    initPolaroidEntrance();
     initTimeline();
+    initBeginningTyping();
     initTyping();
     initFinale();
     initNavDots();
     initNextSection();
+    initGalleryControls();
 
     // Small delay for GSAP to load
     setTimeout(initGSAP, 100);
