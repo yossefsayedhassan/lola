@@ -10,10 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
      1. PRELOADER
   ══════════════════════════════════════════════ */
   const preloader = document.getElementById('preloader');
-  // After fill-bar animation (2s) + small delay = fade out
   setTimeout(() => {
-    preloader.classList.add('fade-out');
-    setTimeout(() => preloader.remove(), 900);
+    if (preloader) {
+      preloader.classList.add('fade-out');
+      setTimeout(() => preloader.remove(), 900);
+    }
   }, 2400);
 
 
@@ -42,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   // Cursor state on interactive elements
-  document.querySelectorAll('a, button, .gallery-card, .timeline-card').forEach(el => {
+  document.querySelectorAll('a, button, .gallery-card, .timeline-card, .nav-dot, .next-section').forEach(el => {
     el.addEventListener('mouseenter', () => document.body.classList.add('cursor-link'));
     el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-link'));
   });
@@ -103,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const starsCanvas = document.getElementById('stars-canvas');
   const sCtx = starsCanvas.getContext('2d');
   let stars = [];
+  let starsRAF = null;
 
   function initStars() {
     starsCanvas.width  = window.innerWidth;
@@ -130,23 +132,27 @@ document.addEventListener('DOMContentLoaded', () => {
       sCtx.fillStyle = `rgba(255, 200, 210, ${Math.max(0, Math.min(1, s.alpha))})`;
       sCtx.fill();
     });
-    requestAnimationFrame(drawStars);
+    starsRAF = requestAnimationFrame(drawStars);
   }
 
   initStars();
   drawStars();
   window.addEventListener('resize', initStars);
 
+  function stopStars() {
+    if (starsRAF) { cancelAnimationFrame(starsRAF); starsRAF = null; }
+  }
+
 
   /* ══════════════════════════════════════════════
-     5. ENTER BUTTON → REVEAL STORY
+      5. ENTER BUTTON → REVEAL STORY
   ══════════════════════════════════════════════ */
   const enterBtn = document.getElementById('enter-btn');
   const storyEl  = document.getElementById('story');
   const introEl  = document.getElementById('intro');
 
   enterBtn.addEventListener('click', () => {
-    // Animate intro out
+    stopStars();
     introEl.style.transition = 'opacity 1.2s ease, transform 1.2s ease';
     introEl.style.opacity    = '0';
     introEl.style.transform  = 'scale(1.04)';
@@ -154,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       introEl.style.display = 'none';
       storyEl.classList.remove('hidden');
+      const nav = document.getElementById('section-nav');
+      if (nav) nav.classList.remove('hidden');
       window.scrollTo({ top: 0, behavior: 'instant' });
       initStory();
     }, 1200);
@@ -199,15 +207,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function playChord(freqs) {
     if (!audioCtx || !isPlaying) return;
 
+    // Resume context if suspended (browser autoplay policy)
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
     freqs.forEach(freq => {
       const osc  = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      const rev  = audioCtx.createConvolver();
 
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-      // Fade in + out (gentle pluck)
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
       gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.25);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3.0);
@@ -217,8 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       osc.start(audioCtx.currentTime);
       osc.stop(audioCtx.currentTime + 3.5);
-
-      musicNodes.push(osc);
     });
   }
 
@@ -237,8 +244,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function stopMusic() {
     isPlaying = false;
     clearInterval(chordInterval);
-    musicNodes.forEach(n => { try { n.stop(); } catch(e) {} });
-    musicNodes = [];
     playIcon.style.display  = 'block';
     pauseIcon.style.display = 'none';
   }
@@ -347,12 +352,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-     11. GALLERY LIGHTBOX
+      11. GALLERY LIGHTBOX
   ══════════════════════════════════════════════ */
   const lightbox    = document.getElementById('lightbox');
   const lbImg       = document.getElementById('lightbox-img');
   const lbCaption   = document.getElementById('lightbox-caption');
   const lbClose     = document.getElementById('lightbox-close');
+  const lbPrev      = document.getElementById('lightbox-prev');
+  const lbNext      = document.getElementById('lightbox-next');
 
   const galleryData = [
     { url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=1200&q=90', caption: '✨ أول ابتسامة' },
@@ -363,20 +370,41 @@ document.addEventListener('DOMContentLoaded', () => {
     { url: 'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=1200&q=90', caption: '💕 بداية الأبد' },
   ];
 
+  let currentLightboxIdx = 0;
+
+  function openLightbox(idx) {
+    currentLightboxIdx = idx;
+    const d = galleryData[idx];
+    lbImg.style.backgroundImage = `url('${d.url}')`;
+    lbCaption.textContent = d.caption;
+    lightbox.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function navigateLightbox(dir) {
+    let idx = currentLightboxIdx + dir;
+    if (idx < 0) idx = galleryData.length - 1;
+    if (idx >= galleryData.length) idx = 0;
+    openLightbox(idx);
+  }
+
   document.querySelectorAll('.gallery-card').forEach(card => {
     card.addEventListener('click', () => {
       const idx = parseInt(card.dataset.lightbox) - 1;
-      const d   = galleryData[idx];
-      lbImg.style.backgroundImage = `url('${d.url}')`;
-      lbCaption.textContent = d.caption;
-      lightbox.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+      openLightbox(idx);
     });
   });
 
   lbClose.addEventListener('click', closeLightbox);
   lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navigateLightbox(-1);
+    if (e.key === 'ArrowRight') navigateLightbox(1);
+  });
+
+  if (lbPrev) lbPrev.addEventListener('click', () => navigateLightbox(-1));
+  if (lbNext) lbNext.addEventListener('click', () => navigateLightbox(1));
 
   function closeLightbox() {
     lightbox.classList.add('hidden');
@@ -385,7 +413,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-     12. TIMELINE ANIMATIONS
+      12. SECTION NAV DOTS — SCROLL TRACKING + CLICK
+  ══════════════════════════════════════════════ */
+  function initNavDots() {
+    const nav     = document.getElementById('section-nav');
+    const dots    = nav.querySelectorAll('.nav-dot');
+    const targets = Array.from(dots).map(d => document.getElementById(d.dataset.target));
+
+    function updateActiveDot() {
+      let activeIdx = 0;
+      const scrollY = window.scrollY + window.innerHeight * 0.4;
+      targets.forEach((t, i) => {
+        if (t && t.offsetTop <= scrollY) activeIdx = i;
+      });
+      dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+    }
+
+    window.addEventListener('scroll', updateActiveDot, { passive: true });
+    updateActiveDot();
+
+    dots.forEach(d => {
+      d.addEventListener('click', () => {
+        const target = document.getElementById(d.dataset.target);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
+  /* ══════════════════════════════════════════════
+      13. NEXT SECTION PROMPTS
+  ══════════════════════════════════════════════ */
+  function initNextSection() {
+    document.querySelectorAll('.next-section').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const section = btn.closest('.story-section');
+        let next = section.nextElementSibling;
+        while (next && !next.classList.contains('story-section')) {
+          next = next.nextElementSibling;
+        }
+        if (next) next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
+  /* ══════════════════════════════════════════════
+      14. TIMELINE ANIMATIONS
   ══════════════════════════════════════════════ */
   function initTimeline() {
     const items = document.querySelectorAll('.timeline-item');
@@ -402,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-     13. TYPING EFFECT (Love Letter)
+      15. TYPING EFFECT (Love Letter) + PAPER REVEAL
   ══════════════════════════════════════════════ */
   const letterText = `يا آلاء، في الشغل كنا بنتعامل زي أي ناس عادية — بس كان في حاجة في ضحكتك بتوقفني كل مرة. مش قادر أفسرها، بس كنت دايمًا بدور عليكي بعيني من غير ما أقصد.
 
@@ -422,6 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const target   = document.getElementById('letter-typed');
     const cursor   = document.getElementById('typing-cursor');
     const sign     = document.querySelector('.letter-sign');
+    const paper    = document.getElementById('letter-paper');
 
     if (sign) sign.style.opacity = '0';
 
@@ -430,7 +503,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (entry.isIntersecting && !typingDone && !typingActive) {
           typingActive = true;
           obs.disconnect();
-          typeText(letterText, target, cursor, sign);
+          // Trigger paper reveal first
+          if (paper) {
+            paper.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+            setTimeout(() => paper.classList.add('revealed'), 100);
+          }
+          // Start typing after paper reveals
+          setTimeout(() => typeText(letterText, target, cursor, sign), 600);
         }
       });
     }, { threshold: 0.3 });
@@ -461,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-     14. SURPRISE BUTTON
+      16. SURPRISE BUTTON
   ══════════════════════════════════════════════ */
   const surpriseBtn = document.getElementById('surprise-btn');
   const surpriseMsg = document.getElementById('surprise-message');
@@ -535,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-     15. FINALE CANVAS — Floating Hearts + Fireworks
+      17. FINALE CANVAS — Floating Hearts + Fireworks
   ══════════════════════════════════════════════ */
   function initFinale() {
     const finale  = document.getElementById('finale');
@@ -635,12 +714,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Simple canvas fireworks
   let fireworkParticles = [];
+  let fireworksRAF = null;
 
   function startFireworks(ctx, canvas) {
     spawnFirework(ctx, canvas);
     const iv = setInterval(() => spawnFirework(ctx, canvas), 1200);
     setTimeout(() => clearInterval(iv), 10000);
     animateFireworks(ctx, canvas);
+  }
+
+  function stopFireworks() {
+    if (fireworksRAF) { cancelAnimationFrame(fireworksRAF); fireworksRAF = null; }
   }
 
   function spawnFirework(ctx, canvas) {
@@ -674,12 +758,14 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.fillStyle = p.color.replace('hsl', 'hsla').replace(')', `, ${p.alpha})`);
       ctx.fill();
     });
-    requestAnimationFrame(() => animateFireworks(ctx, canvas));
+    if (fireworkParticles.length > 0) {
+      fireworksRAF = requestAnimationFrame(() => animateFireworks(ctx, canvas));
+    }
   }
 
 
   /* ══════════════════════════════════════════════
-     16. GSAP SCROLL-TRIGGER (if available)
+      18. GSAP SCROLL-TRIGGER (if available)
   ══════════════════════════════════════════════ */
   function initGSAP() {
     if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
@@ -732,7 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ══════════════════════════════════════════════
-     17. INIT STORY (called after enter btn)
+      19. INIT STORY (called after enter btn)
   ══════════════════════════════════════════════ */
   function initStory() {
     initScrollAnimations();
@@ -740,6 +826,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initTimeline();
     initTyping();
     initFinale();
+    initNavDots();
+    initNextSection();
 
     // Small delay for GSAP to load
     setTimeout(initGSAP, 100);
