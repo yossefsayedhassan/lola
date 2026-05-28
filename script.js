@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.25);
+      gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.25);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3.0);
 
       osc.connect(gain);
@@ -460,12 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
         photo.style.backgroundImage = `url('${d.url}')`;
       }
 
-      const caption = document.createElement('span');
-      caption.className = 'polaroid-caption';
-      caption.textContent = d.caption;
-
       card.appendChild(photo);
-      card.appendChild(caption);
       grid.appendChild(card);
     });
   }
@@ -695,15 +690,21 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ══════════════════════════════════════════════
       16. TYPING EFFECT (Love Letter) + PAPER REVEAL
   ══════════════════════════════════════════════ */
-  const letterText = `يا آلاء، في الشغل كنا بنتعامل زي أي ناس عادية — بس كان في حاجة في ضحكتك بتوقفني كل مرة. مش قادر أفسرها، بس كنت دايمًا بدور عليكي بعيني من غير ما أقصد.
+  const letterText = `يا آلاء…
 
-يوم ١٠ فبراير، قبل عيد ميلادك بيوم واحد بس، قلت في نفسي مش هقدر أسكت أكتر من كده. قلتلك إني بحبك — وكانت أجمل لحظة خفت منها وفي نفس الوقت حسيت بأمان أوي.
+مش عارف إزاي واحدة كانت مجرد شخص قابلته في الشغل، بقت فجأة أكتر حد بفكر فيه طول اليوم.
 
-بعدين يوم ١١ — يوم ميلادك يا عسولة — الدنيا كلها احتفلت بيكي، وأنا احتفلت أكتر من أي حد.
+اليوم اللي شوفتك فيه، كنت داخل متعصب ومخنوق من الدنيا كلها، بس إنتِ… هديتيني من غير ما تعملي أي حاجة. كانت نظرة منك كفاية تخليني أنسى كل اللي مضايقني.
 
-ولما جه يوم ١٤ فبراير وقلتيلي بتحبيني، واللهي يا آلاء، حسيت إن القاهرة بكل دوشتها سكتت ثانية وسمعت بس صوتك.
+واحدة واحدة، بقيت أنزل المكتب علشان أشوفك حتى لو دقيقة، وأدور عليكي بعيني وسط أي مكان. وقتها مكنتش فاهم ده إيه… بس دلوقتي عرفت إنه كان حب من أول مرة.
 
-أنا بحبك أوي يا حبيبة قلبي. دايمًا افتكريني، أنا معاكي دايمًا.`;
+ولحد يوم ١٠ فبراير… اليوم اللي قلبي أخيرًا بطل يخبي. كنت خايف جدًا، بس عمري ما ندمت ثانية إني قولتلك إني بحبك. لأن من بعدها، وأنا حاسس إن قلبي أخيرًا لقى مكانه.
+
+ويوم ما قولتيلي "بحبك"… والله يا آلاء، حسيت إن الدنيا كلها سكتت، ومبقاش في غير صوتك وإنتِ بتقوليها.
+
+إنتِ مش بس حبيبتي… إنتِ راحتي، وهدوئي، والحاجة الحلوة اللي جت وغيرت أيامي كلها.
+
+ولو خيروني بين ألف شخص وبينك… هختارك إنتِ كل مرة، وكأني أول مرة أحب ❤️`;
 
   let typingDone = false;
   let typingActive = false;

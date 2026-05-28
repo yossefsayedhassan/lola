@@ -816,20 +816,6 @@ body.cursor-link #cursor-ring { width: 48px; height: 48px; border-color: var(--g
   background-color: var(--bg-secondary);
 }
 
-/* Polaroid caption */
-.polaroid-caption {
-  display: block;
-  text-align: center;
-  font-family: var(--font-script);
-  font-size: 0.85rem;
-  color: #5a3e4a;
-  margin-top: 10px;
-  line-height: 1.4;
-  letter-spacing: 0.03em;
-}
-
-
-
 /* Hover: lift + shadow + tape */
 .polaroid::before {
   content: '';
@@ -878,7 +864,7 @@ body.cursor-link #cursor-ring { width: 48px; height: 48px; border-color: var(--g
     0 2px 8px rgba(0,0,0,0.4),
     0 1px 3px rgba(0,0,0,0.3);
 }
-[data-theme="dark"] .polaroid-caption { color: var(--text-secondary); }
+
 [data-theme="dark"] .polaroid::before { background: rgba(60,40,50,0.5); }
 
 /* Lightbox image with Ken Burns */
